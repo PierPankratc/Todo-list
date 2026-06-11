@@ -1,27 +1,17 @@
+# db/create_db.py
 from sqlalchemy import create_engine
-from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 
-class Base(DeclarativeBase):
-    pass
-
-# --- НАСТРОЙКА ПОДКЛЮЧЕНИЯ ---
+# Движок для SQLite
 engine = create_engine(url='sqlite:///todo.db', echo=True)
 
-# 1. Создаём фабрику сессий (ОДИН РАЗ)
+# Фабрика сессий
 SessionLocal = sessionmaker(bind=engine)
 
-# 2. Функция-зависимость для FastAPI (ВОЗВРАЩАЕТ СЕССИЮ)
+# Зависимость для получения сессии в эндпоинтах
 def get_db_connect():
-    db = SessionLocal()  # Создаём сессию из фабрики
+    db = SessionLocal()
     try:
-        yield db         # Передаём сессию в эндпоинт
+        yield db
     finally:
-        db.close()       # Закрываем сессию
-
-# 3. Функция для создания таблиц
-def create_db():
-    Base.metadata.create_all(bind=engine)
-    print("✅ База данных и таблицы созданы!")
-
-# Создаём таблицы при запуске модуля
-create_db()
+        db.close()
