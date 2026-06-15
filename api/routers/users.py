@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException, Header, Response
 from fastapi.security import OAuth2PasswordBearer
 from db.create_db import get_db_connect 
 from api.schemas import UserSchema, TaskSchema
@@ -7,65 +7,22 @@ from db.models import Users, Todo
 import jwt as PYjwt
 from datetime import datetime, timedelta
 from typing import Optional
+from authx import AuthX, AuthXConfig
 
-SECRET_KEY = "secret"
-ALGORITHM = "HS256"
-
-router = APIRouter(prefix='/user', tags=['Пользователи'])
-
-# OAuth2 схема (для Swagger)
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="user/login", auto_error=False)
-
-# ===== ФУНКЦИИ АВТОРИЗАЦИИ =====
-def get_current_user_from_token(
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db_connect)
-):
-
-    credentials_exception = HTTPException(
-        status_code=401,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    
-    if not token:
-        raise credentials_exception
-    
-    try:
-        payload = PYjwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            raise credentials_exception
-    except PYjwt.PyJWTError:
-        raise credentials_exception
-    
-    user = db.query(Users).filter(Users.id == int(user_id)).first()
-    if user is None:
-        raise credentials_exception
-    return user
+router = APIRouter()
 
 
-def get_current_user_id_from_token(
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db_connect)
-):
+config = AuthXConfig()
+config.JWT_SECRET_KEY = 'ggg'
+config.JWT_ACCESS_COOKIE_NAME = 'access_token'
+config.JWT_TOKEN_LOCATION = ['cookies']
 
-    user = get_current_user_from_token(token, db)
-    return user.id
-
-
-# Альтернативный способ получения токена из заголовка (без OAuth2)
-def get_token_from_header(authorization: str = Header(...)):
-   
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Invalid authorization header")
-    return authorization.replace("Bearer ", "")
-
+security = AuthX(config=config)
 
 # ===== ЭНДПОИНТЫ =====
 
 @router.post('/login')
-def login(user: UserSchema, db: Session = Depends(get_db_connect)):
+def login(user: UserSchema, response: Response, db: Session = Depends(get_db_connect)):
     # Проверяем пользователя
     db_user = db.query(Users).filter(Users.name == user.name).first()
     
@@ -75,31 +32,22 @@ def login(user: UserSchema, db: Session = Depends(get_db_connect)):
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
+        
     elif db_user.password != user.password:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     # Создаём токен
-    token = PYjwt.encode(
-        {
-            'sub': str(db_user.id), 
-            'exp': datetime.utcnow() + timedelta(hours=1)
-        },
-        SECRET_KEY, 
-        algorithm=ALGORITHM
-    )
+    token = security.create_access_token(uid=str(db_user.id))
+    response.set_cookie(config.JWT_ACCESS_COOKIE_NAME, token)
+    return {'token': token}
     
-    return {
-        'access_token': token,
-        'token_type': 'bearer',
-        'user_id': db_user.id
-    }
 
 
 @router.post('/add_task')
 def add_task(
     task: TaskSchema, 
     db: Session = Depends(get_db_connect), 
-    current_user: Users = Depends(get_current_user_from_token) 
+    
 ):
 
     new_task = Todo(
