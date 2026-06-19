@@ -51,26 +51,26 @@
 ## 🏗️ Архитектура проекта
 ```
 Todo-list/
-├── api/ # Слой API (контроллеры)
+├── api/ 
 │ ├── init.py
 │ └── routers/
 │ ├── init.py
-│ └── users.py # Все эндпоинты для пользователей и их сущностей
-├── db/ # Слой данных
+│ └── users.py 
+├── db/ 
 │ ├── init.py
-│ ├── create_db.py # Подключение к БД, фабрика сессий
-│ └── models.py # Модели SQLAlchemy (Users, Projects, Tasks, SubTasks)
-├── alembic/ # Миграции базы данных (Alembic)
-│ └── versions/ # Файлы миграций
+│ ├── create_db.py 
+│ └── models.py 
+├── alembic/ 
+│ └── versions/ 
 ├── core/ # (Планируется) Ядро проекта
 │ └── security.py # Безопасность, хеширование (в разработке)
-├── main.py # Точка входа в приложение
-├── requirements.txt # Зависимости проекта
-├── Dockerfile # Инструкция для сборки Docker-образа
-├── alembic.ini # Конфигурация Alembic
-├── .gitignore # Игнорируемые файлы
-├── LICENSE # Лицензия MIT
-└── README.md # Этот файл
+├── main.py 
+├── requirements.txt
+├── Dockerfile 
+├── alembic.ini 
+├── .gitignore 
+├── LICENSE 
+└── README.md 
 ```
 
 
