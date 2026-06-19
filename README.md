@@ -95,15 +95,16 @@ uvicorn main:app --reload
 
     ReDoc: http://localhost:8000/redoc
 
+## Через Docker
+```
 docker build -t taskflow-api .
 
 docker run -d -p 8000:8000 --name taskflow taskflow-api
 
 docker stop taskflow
 docker rm taskflow
-
-##  Зависимости (requirements.txt)
 ```
+##  Зависимости (requirements.txt)
 ```
 fastapi==0.115.0
 uvicorn==0.30.0
